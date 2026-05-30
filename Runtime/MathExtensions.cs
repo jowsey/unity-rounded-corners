@@ -62,7 +62,7 @@ namespace Gilzoide.RoundedCorners
             return rect.width > 0 && rect.height > 0;
         }
 
-        public static IEnumerable<Vector2> EnumerateCornerPoints(this Rect rect, RectCorner corner, RoundedCorner roundParameters, float maxRadius)
+        public static IEnumerable<Vector2> EnumerateCornerPoints(this Rect rect, RectCorner corner, RoundedCorner roundParameters, float maxRadius, float smoothing = 0f)
         {
             float radius = Mathf.Min(maxRadius, roundParameters.Radius);
             if (radius <= 0)
@@ -74,12 +74,28 @@ namespace Gilzoide.RoundedCorners
             Vector2 pivotPoint = rect.Inset(radius).GetCornerPoint(corner);
             Vector2 direction = new Vector2(radius, 0);
             (float startAngle, float endAngle) = corner.GetAngleRangeFromCenter();
-            yield return pivotPoint + direction.Rotated(startAngle);
-            
+
+            float n = smoothing >= 1f ? float.PositiveInfinity : 2f / (1f - smoothing);
+
+            float GetMultiplier(float angle)
+            {
+                float rad = angle * Mathf.Deg2Rad;
+                float cos = Mathf.Abs(Mathf.Cos(rad));
+                float sin = Mathf.Abs(Mathf.Sin(rad));
+                float maxAbs = Mathf.Max(cos, sin);
+
+                return float.IsInfinity(n)
+                    ? 1f / maxAbs
+                    : Mathf.Pow(Mathf.Pow(cos / maxAbs, n) + Mathf.Pow(sin / maxAbs, n), -1f / n) / maxAbs;
+            }
+
+            yield return pivotPoint + direction.Rotated(startAngle) * GetMultiplier(startAngle);
+
             int count = Mathf.Min(Mathf.FloorToInt(radius), roundParameters.TriangleCount);
             for (int i = 0; i < count; i++)
             {
-                yield return pivotPoint + direction.Rotated(Mathf.Lerp(startAngle, endAngle, (float) (i + 1) / (float) count));
+                float angle = Mathf.Lerp(startAngle, endAngle, (float)(i + 1) / (float)count);
+                yield return pivotPoint + direction.Rotated(angle) * GetMultiplier(angle);
             }
         }
 

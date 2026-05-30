@@ -7,6 +7,8 @@ namespace Gilzoide.RoundedCorners
     public class RoundedRect : MaskableGraphic
     {
         [Header("Corner Radius")]
+        [Range(0f, 1f)]
+        [SerializeField] protected float _smoothing = 0f;
         [SerializeField] protected RoundedCorner _bottomLeft = new RoundedCorner { Radius = 32, TriangleCount = 8 };
         [SerializeField] protected RoundedCorner _topLeft = new RoundedCorner { Radius = 32, TriangleCount = 8 };
         [SerializeField] protected RoundedCorner _topRight = new RoundedCorner { Radius = 32, TriangleCount = 8 };
@@ -56,6 +58,17 @@ namespace Gilzoide.RoundedCorners
             }
         }
 
+        /// <summary>Corner smoothing. 0 is circular, 1 is fully superellipsed.</summary>
+        public float Smoothing
+        {
+            get => _smoothing;
+            set
+            {
+                _smoothing = Mathf.Clamp01(value);
+                SetVerticesDirty();
+            }
+        }
+
         #region Mesh generation
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -72,7 +85,7 @@ namespace Gilzoide.RoundedCorners
             int vertexCount = 1;
 
             float maxRadius = Mathf.Min(rect.width, rect.height) * 0.5f;
-            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.BottomLeft, BottomLeft, maxRadius))
+            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.BottomLeft, BottomLeft, maxRadius, Smoothing))
             {
                 PopulatePoint(vh, rect, v);
                 vertexCount++;
@@ -81,19 +94,19 @@ namespace Gilzoide.RoundedCorners
                     vh.AddTriangle(0, vertexCount - 2, vertexCount - 1);
                 }
             }
-            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.TopLeft, TopLeft, maxRadius))
+            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.TopLeft, TopLeft, maxRadius, Smoothing))
             {
                 PopulatePoint(vh, rect, v);
                 vertexCount++;
                 vh.AddTriangle(0, vertexCount - 2, vertexCount - 1);
             }
-            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.TopRight, TopRight, maxRadius))
+            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.TopRight, TopRight, maxRadius, Smoothing))
             {
                 PopulatePoint(vh, rect, v);
                 vertexCount++;
                 vh.AddTriangle(0, vertexCount - 2, vertexCount - 1);
             }
-            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.BottomRight, BottomRight, maxRadius))
+            foreach(Vector2 v in rect.EnumerateCornerPoints(RectCorner.BottomRight, BottomRight, maxRadius, Smoothing))
             {
                 PopulatePoint(vh, rect, v);
                 vertexCount++;
